@@ -119,7 +119,7 @@ const ChatRoomPage = () => {
           <>
             <div className="flex justify-between items-center border-b pb-4 mb-4">
               <h2 className="text-white text-2xl">Chat with {activeUser.displayName}</h2>
-              <Button variant="destructive" size="sm" onClick={() => setActiveUser(null)}>Close Chat</Button>
+              <Button className="!bg-red-700 text-white" onClick={() => setActiveUser(null)}>Close Chat</Button>
             </div>
             <div className="flex-1 overflow-auto bg-gray-800 p-4 rounded-lg">
               {messages.map((msg, i) => (
