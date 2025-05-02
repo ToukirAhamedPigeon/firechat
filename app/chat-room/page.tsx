@@ -7,7 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { useTheme } from "next-themes";
-import { collection, getDocs, query, orderBy, addDoc, onSnapshot, doc } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, addDoc, onSnapshot } from 'firebase/firestore';
 
 const ChatRoomPage = () => {
   const router = useRouter();
