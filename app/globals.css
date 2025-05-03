@@ -114,5 +114,16 @@
 }
 
 @layer base {
+  /* Custom scrollbars */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
 
+  .scrollbar-thumb-gray-600::-webkit-scrollbar-thumb {
+    background-color: #4b5563;
+  }
+
+  .scrollbar-thumb-blue-600::-webkit-scrollbar-thumb {
+    background-color: #2563eb;
+  }
 }
