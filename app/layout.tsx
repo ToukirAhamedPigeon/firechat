@@ -1,7 +1,7 @@
 import { ThemeProvider } from "next-themes";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import "./globals.css"; //all the styles
 import GetNotification from "./getNotification";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
