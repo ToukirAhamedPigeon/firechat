@@ -5,15 +5,11 @@ import { useRouter, usePathname } from "next/navigation";
 import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import {
-  doc, setDoc, getDocs, collection, query,
-  where, serverTimestamp, updateDoc, deleteField,
-  getDoc
+  doc, setDoc, getDoc
 } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
-import { getMessaging, getToken, deleteToken } from 'firebase/messaging';
-import { requestNotificationPermission } from '@/lib/firebase-messaging';
-import { onForegroundMessage } from '@/lib/firebase-messaging';
+import { getMessaging, getToken } from 'firebase/messaging';
 
 const HomeClient = () => {
   const router = useRouter();
