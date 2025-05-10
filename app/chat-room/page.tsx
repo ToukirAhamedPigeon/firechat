@@ -207,6 +207,7 @@ const ChatRoomPage = () => {
   const sendPushNotification = async (receiverUid: string, messageText: string) => {
     // Fetch the FCM token of the receiver from your backend or Firestore
     const token = await getFCMToken(receiverUid);
+    console.log("FCM Token ", token)
   
     if (!token) {
       console.error("FCM token not found for user", receiverUid);
