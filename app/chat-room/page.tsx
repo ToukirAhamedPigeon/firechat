@@ -26,6 +26,7 @@ import { onForegroundMessage } from '@/lib/firebase-messaging';
 import { requestNotificationPermission } from '@/lib/firebase-messaging';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { cn } from '@/lib/utils';
 
 const ChatRoomPage = () => {
   const router = useRouter();
@@ -39,6 +40,8 @@ const ChatRoomPage = () => {
   const [typingUserId, setTypingUserId] = useState<string | null>(null); // Track if other user is typing
   const messagesEndRef = useRef<HTMLDivElement>(null); // Ref to scroll chat to bottom
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({}); // Track unread message counts
+  const [showSidebar, setShowSidebar] = useState(false);
+
 
   useEffect(() => {
 
@@ -56,27 +59,27 @@ const ChatRoomPage = () => {
     }
     console.log('Permission:', Notification.permission);
   
-    // onForegroundMessage((payload) => {
-    //   const title = payload.notification?.title || "Notification";
-    //   const body = payload.notification?.body || "You have a new message";
-    //   const icon = payload.notification?.icon || "/fire.png";
+    onForegroundMessage((payload) => {
+      const title = payload.notification?.title || "Notification";
+      const body = payload.notification?.body || "You have a new message";
+      const icon = payload.notification?.icon || "/fire.png";
   
-    //   console.log("📩 Foreground message received:", payload);
+      console.log("📩 Foreground message received:", payload);
   
-    //   if (document.hidden) {
-    //     // If tab is inactive, show native browser notification
-    //     console.log('Permission:', Notification.permission);
-    //     if (Notification.permission === "granted") {
-    //       new Notification(title, {
-    //         body,
-    //         icon,
-    //       });
-    //     }
-    //   } else {
-    //     // Tab is active, show toast
-    //     toast.info(body);
-    //   }
-    // });
+      if (document.hidden) {
+        // If tab is inactive, show native browser notification
+        console.log('Permission:', Notification.permission);
+        if (Notification.permission === "granted") {
+          new Notification(title, {
+            body,
+            icon,
+          });
+        }
+      } else {
+        // Tab is active, show toast
+        toast.info(body);
+      }
+    });
   }, []);
 
    // Load all users except self
@@ -350,75 +353,128 @@ const getFCMToken = async (userUid: string) => {
     }, [user, users]);
 
   return (
-    <div className="flex flex-col md:flex-row h-screen">
-      {/* Sidebar / User List */}
-      <aside className="md:w-1/3 w-full md:block border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
-        {/* Collapsible on mobile */}
-        <Collapsible>
-          <CollapsibleTrigger className="md:hidden p-4 text-left font-semibold">Users</CollapsibleTrigger>
-          <CollapsibleContent className="p-4 space-y-2">
-            {users.map((u) => (
-              <button
-                key={u.uid}
-                className={`w-full text-left p-2 rounded ${activeUser?.uid === u.uid ? 'bg-blue-100 dark:bg-blue-800' : ''}`}
-                onClick={() => setActiveUser(u)}
-              >
-                {u.name} {unreadCounts[u.uid] ? `(${unreadCounts[u.uid]})` : ''}
-              </button>
-            ))}
-          </CollapsibleContent>
-        </Collapsible>
-      </aside>
+    <div className="flex h-screen bg-background overflow-hidden relative">
+      {/* Mobile toggle button */}
+      <Button
+        className=" md:hidden absolute top-0 left-0 z-50"
+        onClick={() => setShowSidebar(!showSidebar)}
+      >
+        {showSidebar ? 'Close' : 'Users'}
+      </Button>
 
-      {/* Chat Section */}
-      <main className="flex-1 flex flex-col h-full">
+      {/* Sidebar */}
+      <div
+        className={cn(
+          "w-64 fixed top-0 left-0 h-full z-40 bg-gray-900 border-r border-white/10 transform transition-transform duration-300 flex flex-col md:static md:translate-x-0",
+          showSidebar ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {/* Header */}
+        <div className="p-4 pt-10 shrink-0">
+          <h3 className="text-white text-lg font-semibold">Users</h3>
+        </div>
+
+        {/* Scrollable user list */}
+        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+          <Collapsible>
+            {users.map((u) => (
+              <div key={u.uid}>
+                <CollapsibleTrigger
+                  onClick={() => {
+                    setActiveUser(u);
+                    setShowSidebar(false);
+                  }}
+                  className={cn(
+                    "flex justify-between items-center px-4 py-2 text-white w-full cursor-pointer",
+                    activeUser?.uid === u.uid ? "bg-gray-700" : "hover:bg-gray-700"
+                  )}
+                >
+                  <span className="relative">
+                    <span title={u.email}>
+                      {u.displayName}
+                      <span className="text-[10px] text-gray-400 ml-1">
+                        {u.typingTo === user?.uid ? 'is typing...' : ''}
+                      </span>
+                    </span>
+                    {unreadCounts[u.uid] > 0 && (
+                      <span className="ml-2 text-xs bg-red-600 text-white rounded-full px-2">
+                        {unreadCounts[u.uid]}
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-xs">
+                    <div className={cn("w-2 h-2 rounded-full", u.isOnline ? 'bg-green-400' : 'bg-red-400')} />
+                  </span>
+                </CollapsibleTrigger>
+                <CollapsibleContent />
+              </div>
+            ))}
+          </Collapsible>
+        </div>
+
+        {/* Logout fixed to bottom */}
+        <div className="shrink-0 p-4 border-t border-white/10">
+          <Button variant="destructive" className="!bg-red-700 !text-white w-full" onClick={logout}>
+            Log Out
+          </Button>
+        </div>
+      </div>
+
+      {/* Chat interface */}
+      <div className="flex-1 p-6 relative flex flex-col md:ml-0 ml-0">
         {activeUser ? (
           <>
-            <header className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold">{activeUser.name}</h2>
-            </header>
+            <div className="flex justify-between items-center border-b pb-4 mb-4">
+              <div className="flex items-center gap-2">
+                <h2 className="text-white text-2xl">Chat with {activeUser.displayName}</h2>
+                {typingUserId === activeUser.uid ? (
+                  <p className="text-green-400 text-sm mt-3">is typing...</p>
+                ) : activeUser.isOnline ? (
+                  <p className="text-green-400 text-sm mt-3">Active</p>
+                ) : (
+                  <p className="text-red-400 text-sm mt-3">Inactive</p>
+                )}
+              </div>
+              <Button className="!bg-red-700 text-white" onClick={() => setActiveUser(null)}>
+                Close Chat
+              </Button>
+            </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
-              {messages.map(msg => (
-                <div
-                  key={msg.id}
-                  className={`max-w-[80%] p-2 rounded-lg text-sm ${
-                    msg.senderId === user?.uid ? 'bg-blue-500 text-white self-end ml-auto' : 'bg-gray-200 dark:bg-gray-700 text-black dark:text-white self-start mr-auto'
-                  }`}
-                >
-                  {msg.text}
+            <div className="flex-1 overflow-auto bg-gray-800 p-4 rounded-lg">
+              {messages.map((msg, i) => (
+                <div key={i} className={`mb-2 flex ${msg.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    className={`flex items-end gap-2 rounded-lg p-2 text-sm ${
+                      msg.senderId === user?.uid ? 'bg-blue-700 text-white' : 'bg-gray-700 text-white'
+                    }`}
+                  >
+                    <p>{msg.text}</p>
+                    <div className="text-[8px] text-right text-gray-300 mt-1">
+                      {msg.seen && msg.senderId === user?.uid ? '✓' : ''}
+                    </div>
+                  </div>
                 </div>
               ))}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Typing Indicator */}
-            {typingUserId === activeUser.uid && (
-              <div className="text-sm text-gray-500 px-4">Typing...</div>
-            )}
-
-            {/* Input */}
-            <footer className="p-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  placeholder="Type a message..."
-                  className="flex-1 rounded-md border px-4 py-2 text-sm dark:bg-gray-800 dark:text-white"
-                />
-                <Button onClick={sendMessage} className="shrink-0">Send</Button>
-              </div>
-            </footer>
+            <div className="flex items-center gap-2 mt-4">
+              <input
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="Type a message..."
+                className="flex-1 p-3 bg-gray-700 text-white rounded-lg"
+              />
+              <Button onClick={sendMessage} className="!bg-green-500 !text-white">
+                Send
+              </Button>
+            </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-500">
-            Select a user to start chatting.
-          </div>
+          <div className="text-white text-xl text-center my-auto">Select a user to start chatting</div>
         )}
-      </main>
+      </div>
     </div>
   );
 };
